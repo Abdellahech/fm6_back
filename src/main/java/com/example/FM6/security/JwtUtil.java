@@ -12,18 +12,22 @@ public class JwtUtil {
     // Token expires in 1 hour
     private static final long EXPIRATION_TIME = 1000 * 60 * 60;
 
-    // You can store this key securely using an environment variable or config file
+    // Key for signing tokens (in-memory, for demo; use env in prod)
     private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // Generate a JWT with username in the payload
-    public static String generateToken(String username) {
+    // ✅ Updated: Generate JWT with email and role
+    public static String generateToken(String email, String role) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SECRET_KEY)
                 .compact();
     }
 
-    // (Optional) Later: add token validation method here
+    // (Optional) Still keeping the original version if needed
+    public static String generateToken(String email) {
+        return generateToken(email, "user"); // default role
+    }
 }
