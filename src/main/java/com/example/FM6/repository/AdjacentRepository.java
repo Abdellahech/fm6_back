@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface AdjacentRepository extends JpaRepository<Adjacent, Long> {
     Optional<Adjacent> findByEmail(String email);
     List<Adjacent> findByAdherentId(Long adherentId);
+    Optional<Adjacent> findByIdAndAdherentId(Long id, Long adherentId); // ✅ added method
 }

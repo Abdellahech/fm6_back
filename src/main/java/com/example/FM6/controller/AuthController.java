@@ -35,7 +35,8 @@ public class AuthController {
         Optional<Adherent> user = adherentRepository.findByEmail(request.getEmail());
         if (user.isPresent() && user.get().getPassword().equals(request.getPassword())) {
             String token = JwtUtil.generateToken(user.get().getEmail(), "adherent");
-            return ResponseEntity.ok(new LoginResponse(token));
+            Long userId = user.get().getId(); // ✅ get adherent id
+            return ResponseEntity.ok(new LoginResponse(token, userId));
         }
         return ResponseEntity.status(401).body("Invalid adherent credentials");
     }
@@ -45,7 +46,8 @@ public class AuthController {
         Optional<Adjacent> user = adjacentRepository.findByEmail(request.getEmail());
         if (user.isPresent() && user.get().getPassword().equals(request.getPassword())) {
             String token = JwtUtil.generateToken(user.get().getEmail(), "adjacent");
-            return ResponseEntity.ok(new LoginResponse(token));
+            Long userId = user.get().getId(); // ✅ get adjacent id
+            return ResponseEntity.ok(new LoginResponse(token, userId));
         }
         return ResponseEntity.status(401).body("Invalid adjacent credentials");
     }
@@ -55,7 +57,8 @@ public class AuthController {
         Optional<Enfant> user = enfantRepository.findByEmail(request.getEmail());
         if (user.isPresent() && user.get().getPassword().equals(request.getPassword())) {
             String token = JwtUtil.generateToken(user.get().getEmail(), "enfant");
-            return ResponseEntity.ok(new LoginResponse(token));
+            Long userId = user.get().getId(); // ✅ get enfant id
+            return ResponseEntity.ok(new LoginResponse(token, userId));
         }
         return ResponseEntity.status(401).body("Invalid enfant credentials");
     }

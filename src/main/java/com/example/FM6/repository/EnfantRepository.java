@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface EnfantRepository extends JpaRepository<Enfant, Long> {
     Optional<Enfant> findByEmail(String email);
     List<Enfant> findByAdherentId(Long adherentId);
+    Optional<Enfant> findByIdAndAdherentId(Long id, Long adherentId); // ✅ added method
 }

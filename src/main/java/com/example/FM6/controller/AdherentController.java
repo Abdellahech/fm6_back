@@ -1,117 +1,100 @@
 package com.example.FM6.controller;
 
+import com.example.FM6.dto.AdherentDetailsDTO;
 import com.example.FM6.entity.Adherent;
 import com.example.FM6.entity.Adjacent;
 import com.example.FM6.entity.Enfant;
 import com.example.FM6.repository.AdherentRepository;
 import com.example.FM6.repository.AdjacentRepository;
 import com.example.FM6.repository.EnfantRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/adherent")
+@RequestMapping("/api/adherents")
 public class AdherentController {
 
-    private final AdherentRepository adherentRepository;
-    private final AdjacentRepository adjacentRepository;
-    private final EnfantRepository enfantRepository;
+    @Autowired
+    private AdherentRepository adherentRepository;
 
-    public AdherentController(AdherentRepository adherentRepository, AdjacentRepository adjacentRepository, EnfantRepository enfantRepository) {
-        this.adherentRepository = adherentRepository;
-        this.adjacentRepository = adjacentRepository;
-        this.enfantRepository = enfantRepository;
-    }
+    @Autowired
+    private AdjacentRepository adjacentRepository;
 
-    // ✅ Get Adherent by Email (for login/lookup)
-    @GetMapping("/email/{email}")
-    public ResponseEntity<Adherent> getAdherentByEmail(@PathVariable String email) {
-        Adherent adherent = adherentRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Adherent not found with email: " + email));
-        return ResponseEntity.ok(adherent);
-    }
+    @Autowired
+    private EnfantRepository enfantRepository;
 
-    // Fetch adherent + enfants + adjacents
-    @GetMapping("/{id}/profile")
-    public ResponseEntity<?> getAdherentProfile(@PathVariable Long id) {
-        Adherent adherent = adherentRepository.findById(id).orElseThrow();
-        List<Adjacent> adjacents = adjacentRepository.findByAdherentId(id);
-        List<Enfant> enfants = enfantRepository.findByAdherentId(id);
+    @GetMapping("/{id}/details")
+    public ResponseEntity<AdherentDetailsDTO> getAdherentDetails(@PathVariable Long id) {
+        Optional<Adherent> adherentOpt = adherentRepository.findById(id);
+        if (adherentOpt.isPresent()) {
+            Adherent adherent = adherentOpt.get();
+            List<Adjacent> adjacents = adjacentRepository.findByAdherentId(id);
+            List<Enfant> enfants = enfantRepository.findByAdherentId(id);
 
-        return ResponseEntity.ok(new AdherentProfileResponse(adherent, adjacents, enfants));
-    }
+            AdherentDetailsDTO dto = new AdherentDetailsDTO(
+                adherent.getId(),
+                adherent.getName(),
+                adherent.getEmail(),
+                adjacents,
+                enfants
+            );
 
-    // CRUD for Adherent
-    @GetMapping("/{id}")
-    public ResponseEntity<Adherent> getAdherent(@PathVariable Long id) {
-        return ResponseEntity.ok(adherentRepository.findById(id).orElseThrow());
+            return ResponseEntity.ok(dto);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Adherent> updateAdherent(@PathVariable Long id, @RequestBody Adherent updated) {
-        Adherent adherent = adherentRepository.findById(id).orElseThrow();
-        adherent.setName(updated.getName());
-        adherent.setEmail(updated.getEmail());
-        adherent.setPassword(updated.getPassword());
-        return ResponseEntity.ok(adherentRepository.save(adherent));
+        Optional<Adherent> adherentOpt = adherentRepository.findById(id);
+        if (adherentOpt.isPresent()) {
+            Adherent adherent = adherentOpt.get();
+            adherent.setName(updated.getName());
+            adherent.setEmail(updated.getEmail());
+            // add other fields to update as needed
+            adherentRepository.save(adherent);
+            return ResponseEntity.ok(adherent);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAdherent(@PathVariable Long id) {
-        adherentRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+    @PutMapping("/{adherentId}/adjacents/{adjacentId}")
+    public ResponseEntity<Adjacent> updateAdjacent(@PathVariable Long adherentId,
+                                                   @PathVariable Long adjacentId,
+                                                   @RequestBody Adjacent updated) {
+        Optional<Adjacent> adjacentOpt = adjacentRepository.findByIdAndAdherentId(adjacentId, adherentId);
+        if (adjacentOpt.isPresent()) {
+            Adjacent adjacent = adjacentOpt.get();
+            adjacent.setName(updated.getName());
+            adjacent.setEmail(updated.getEmail());
+            // add other fields as needed
+            adjacentRepository.save(adjacent);
+            return ResponseEntity.ok(adjacent);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // CRUD for Adjacent
-    @PostMapping("/{adherentId}/adjacent")
-    public ResponseEntity<Adjacent> addAdjacent(@PathVariable Long adherentId, @RequestBody Adjacent adjacent) {
-        Adherent adherent = adherentRepository.findById(adherentId)
-                .orElseThrow(() -> new RuntimeException("Adherent not found"));
-        adjacent.setAdherent(adherent);
-        return ResponseEntity.ok(adjacentRepository.save(adjacent));
+    @PutMapping("/{adherentId}/enfants/{enfantId}")
+    public ResponseEntity<Enfant> updateEnfant(@PathVariable Long adherentId,
+                                               @PathVariable Long enfantId,
+                                               @RequestBody Enfant updated) {
+        Optional<Enfant> enfantOpt = enfantRepository.findByIdAndAdherentId(enfantId, adherentId);
+        if (enfantOpt.isPresent()) {
+            Enfant enfant = enfantOpt.get();
+            enfant.setName(updated.getName());
+            enfant.setEmail(updated.getEmail());
+            // add other fields as needed
+            enfantRepository.save(enfant);
+            return ResponseEntity.ok(enfant);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
-
-    @PutMapping("/adjacent/{id}")
-    public ResponseEntity<Adjacent> updateAdjacent(@PathVariable Long id, @RequestBody Adjacent updated) {
-        Adjacent adjacent = adjacentRepository.findById(id).orElseThrow();
-        adjacent.setName(updated.getName());
-        adjacent.setEmail(updated.getEmail());
-        adjacent.setPassword(updated.getPassword());
-        return ResponseEntity.ok(adjacentRepository.save(adjacent));
-    }
-
-    @DeleteMapping("/adjacent/{id}")
-    public ResponseEntity<?> deleteAdjacent(@PathVariable Long id) {
-        adjacentRepository.deleteById(id);
-        return ResponseEntity.ok().build();
-    }
-
-    // CRUD for Enfant
-    @PostMapping("/{adherentId}/enfant")
-    public ResponseEntity<Enfant> addEnfant(@PathVariable Long adherentId, @RequestBody Enfant enfant) {
-        Adherent adherent = adherentRepository.findById(adherentId)
-                .orElseThrow(() -> new RuntimeException("Adherent not found"));
-        enfant.setAdherent(adherent);
-        return ResponseEntity.ok(enfantRepository.save(enfant));
-    }
-
-    @PutMapping("/enfant/{id}")
-    public ResponseEntity<Enfant> updateEnfant(@PathVariable Long id, @RequestBody Enfant updated) {
-        Enfant enfant = enfantRepository.findById(id).orElseThrow();
-        enfant.setName(updated.getName());
-        enfant.setEmail(updated.getEmail());
-        enfant.setPassword(updated.getPassword());
-        return ResponseEntity.ok(enfantRepository.save(enfant));
-    }
-
-    @DeleteMapping("/enfant/{id}")
-    public ResponseEntity<?> deleteEnfant(@PathVariable Long id) {
-        enfantRepository.deleteById(id);
-        return ResponseEntity.ok().build();
-    }
-
-    // DTO for profile response
-    public record AdherentProfileResponse(Adherent adherent, List<Adjacent> adjacents, List<Enfant> enfants) {}
 }
